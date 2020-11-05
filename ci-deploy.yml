@@ -1,0 +1,29 @@
+---
+- name: deploy scm project
+  hosts: webservers
+  remote_user: root
+  gather_facts: false
+  vars:
+    work_dir: /root/scm-project-service
+    mongo_dir: /root/scm-project-service/mongo_persistence
+  tasks:
+    - name: login harbor
+      command: docker login 118.31.44.227 -u admin -p Harbor12345
+    - name: pull the image
+      command: docker pull 118.31.44.227/library/scm-booking-service:latest
+    - name: logout harbor
+      command: docker logout 118.31.44.227
+    - name: tag harbor image
+      command: docker tag 118.31.44.227/library/scm-booking-service:latest scm-booking-service:v2
+    - name: copy docker-compose file
+      copy: src=/var/lib/jenkins/workspace/scm-ci/docker-compose.yaml dest=/root/scm-project-service/docker-compose.yaml
+    - name: create a mongo_persistence directory if it does not exist
+      file:
+        path: "{{mongo_dir}}"
+        state: directory
+    - name: export environment
+      shell: export APP_ENV=production
+    - name: docker-compose up deploy
+      command: ls
+      args:
+        chdir: "{{work_dir}}"
